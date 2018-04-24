@@ -154,7 +154,7 @@ std::string Scaled::to_postscript() const
 }
 
 Layered::Layered(std::initializer_list<std::shared_ptr<Shape>> shapes)
-	:Shape(0,0), m_shapes(std::move(shapes))
+	:Compound(0,0), m_shapes(std::move(shapes))
 {
 	for(unsigned int i = 0; i < m_shapes.size(); ++i)
 	{
@@ -165,22 +165,28 @@ Layered::Layered(std::initializer_list<std::shared_ptr<Shape>> shapes)
 	}
 }
 
-std::string Layered::to_postscript() const
+std::string Layered::drawShift(double shift, int i) const
 {
-	std::cout << get_width() << std::endl;
-	std::cout << get_height() << std::endl;
-	std::string outputString = "";
-	for(unsigned int i = 0; i < m_shapes.size(); ++i)
-	{
-		outputString += "gsave\n" +
-			m_shapes[i]->to_postscript() +
-			"grestore\n";
-	}
-	return outputString;
+	return "";
+}
+
+int Layered::get_list_size() const
+{
+	return m_shapes.size();
+}
+
+std::string Layered::drawShape(int i) const
+{
+	return (m_shapes.at(i))->to_postscript();
+}
+
+int Layered::get_shift(int i) const
+{
+	return 0;
 }
 
 Virtical::Virtical(std::initializer_list<std::shared_ptr<Shape>> shapes)
-	:Shape(0,0), m_shapes(std::move(shapes))
+	:Compound(0,0), m_shapes(std::move(shapes))
 {
 	double total_height = 0;
 	for(unsigned int i = 0; i < m_shapes.size(); ++i)
@@ -192,23 +198,27 @@ Virtical::Virtical(std::initializer_list<std::shared_ptr<Shape>> shapes)
 	set_height(total_height);
 }
 
-std::string Virtical::to_postscript() const
+std::string Virtical::drawShift(double shift, int i) const
 {
-	std::string outputString = "";
-	double total_height_drawn = 0;
-	for(unsigned int i = 0; i < m_shapes.size(); ++i)
-	{
-		outputString += "gsave\n" 
-		"0 " + std::to_string(-get_height()/2 + m_shapes[i]->get_height()/2+total_height_drawn) + " translate\n" +
-		m_shapes[i]->to_postscript() +
-		"grestore\n";
-		total_height_drawn += m_shapes[i]->get_height();
-	}
-	return outputString;
+	return "0 " + std::to_string(-get_height() / 2 + m_shapes[i]->get_height() / 2 + shift) + " translate\n" +
+		m_shapes[i]->to_postscript();
+}
+
+int Virtical::get_list_size() const
+{
+	return m_shapes.size();
+}
+std::string Virtical::drawShape(int i) const
+{
+	return m_shapes.at(i)->to_postscript();
+}
+int Virtical::get_shift(int i) const
+{
+	return m_shapes.at(i)->get_height();
 }
 
 Horizontal::Horizontal(std::initializer_list<std::shared_ptr<Shape>> shapes)
-	:Shape(0,0), m_shapes(std::move(shapes))
+	:Compound(0,0), m_shapes(std::move(shapes))
 {
 	double total_width = 0;
 	for(unsigned int i = 0; i < m_shapes.size(); ++i)
@@ -220,19 +230,25 @@ Horizontal::Horizontal(std::initializer_list<std::shared_ptr<Shape>> shapes)
 	set_width(total_width);
 }
 
-std::string Horizontal::to_postscript() const
+
+std::string Horizontal::drawShift(double shift, int i) const
 {
-	std::string outputString = "";
-	double total_width_drawn = 0;
-	for(unsigned int i = 0; i < m_shapes.size(); ++i)
-	{
-		outputString += "gsave\n" +
-		std::to_string(-get_width()/2 + m_shapes[i]->get_width()/2+total_width_drawn) + " 0" + " translate\n" +
-		m_shapes[i]->to_postscript() +
-		"grestore\n";
-		total_width_drawn += m_shapes[i]->get_width();
-	}
-	return outputString;
+	return std::to_string(-get_width() / 2 + m_shapes[i]->get_width() / 2 + shift) + " 0" + " translate\n" +
+		m_shapes[i]->to_postscript();
+}
+int Horizontal::get_list_size() const
+{
+	return m_shapes.size();
+}
+
+std::string Horizontal::drawShape(int i) const
+{
+	return m_shapes.at(i)->to_postscript();
+}
+
+int Horizontal::get_shift(int i) const
+{
+	return m_shapes.at(i)->get_width();
 }
 
 STriangle::STriangle(double side_length, int depth):Shape(0,0)

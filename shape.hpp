@@ -33,7 +33,6 @@ private:
 class Circle: public Shape
 {
 public:
-	Circle() = default;
 	Circle(double radius);
 	~Circle() = default;
 	std::string to_postscript() const;
@@ -44,7 +43,6 @@ private:
 class Polygon : public Shape
 {
 public:
-	Polygon() = default;
 	Polygon(int num_sides, double side_length);
 	virtual ~Polygon() = default;
 	std::string to_postscript() const;
@@ -57,7 +55,6 @@ private:
 class Rectangle : public Shape
 {
 public:
-	Rectangle() = default;
 	Rectangle(double width, double height): Shape(width, height){}
 	~Rectangle() = default;
 	std::string to_postscript() const;
@@ -67,7 +64,6 @@ private:
 class Spacer : public Shape
 {
 public:
-	Spacer() = default;
 	Spacer(double width, double height): Shape(width, height){}
 	~Spacer() = default;
 	std::string to_postscript() const;
@@ -77,7 +73,6 @@ private:
 class Square : public Polygon
 {
 public:
-	Square() = default;
 	Square(double side_length): Polygon(4, side_length){}
 	~Square() = default;
 private:
@@ -86,7 +81,6 @@ private:
 class Triangle : public Polygon
 {
 public:
-	Triangle() = default;
 	Triangle(double side_length): Polygon(3, side_length){}
 	~Triangle() = default;
 private:
@@ -96,7 +90,6 @@ class Rotated : public Shape
 {
 public:
 	enum RotationAngle { QUARTER = 90, HALF = 180, THREE_QUARTER = 270 };
-	Rotated() = default;
 	Rotated(std::shared_ptr<Shape> shape, RotationAngle rotation_angle);
 	~Rotated() = default;
 	std::string to_postscript() const;
@@ -108,7 +101,6 @@ private:
 class Scaled : public Shape
 {
 public:
-	Scaled() = default;
 	Scaled(std::shared_ptr<Shape> shape, double fx, double fy);
 	~Scaled() = default;
 	std::string to_postscript() const;
@@ -118,35 +110,73 @@ private:
 	double m_fy;
 };
 
-class Layered : public Shape
+
+template<class Derived>
+class Compound : public Shape
 {
 public:
-	Layered() = default;
+	using Shape::Shape;
+	virtual std::string to_postscript() const override;
+	virtual std::string drawShift(double shift, int i) const = 0;
+	virtual int get_list_size() const = 0;
+	virtual int get_shift(int i) const = 0;
+	virtual std::string drawShape(int i) const = 0;
+private:
+	std::shared_ptr<Shape> m_compound;
+};
+
+template<class Derived>
+std::string Compound<Derived>::to_postscript() const
+{
+	std::string outputString = "";
+	double total = 0;
+	int size = static_cast<const Derived*>(this)->get_list_size();
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		outputString += "gsave\n";
+		outputString += static_cast<const Derived*>(this)->drawShift(total, i);
+		outputString += static_cast<const Derived*>(this)->drawShape(i);
+		outputString += "grestore\n";
+		total += static_cast<const Derived*>(this)->get_shift(i);
+	}
+	return outputString;
+}
+
+class Layered : public Compound<Layered>
+{
+public:
 	Layered(std::initializer_list<std::shared_ptr<Shape>> shapes);
 	~Layered() = default;
-	std::string to_postscript() const;
+	std::string drawShift(double shift, int i) const;
+	int get_list_size() const;
+	std::string drawShape(int i) const;
+	int get_shift(int i) const;
 private:
 	std::vector<std::shared_ptr<Shape>> m_shapes;
 };
 
-class Virtical : public Shape
+class Virtical : public Compound<Virtical>
 {
 public:
-	Virtical() = default;
 	Virtical(std::initializer_list<std::shared_ptr<Shape>> shapes);
 	~Virtical() = default;
-	std::string to_postscript() const;
+	std::string drawShift(double shift, int i) const;
+	int get_list_size() const;
+	std::string drawShape(int i) const;
+	int get_shift(int i) const;
 private:
 	std::vector<std::shared_ptr<Shape>> m_shapes;
 };
 
-class Horizontal : public Shape
+class Horizontal : public Compound<Horizontal>
 {
 public:
-	Horizontal() = default;
 	Horizontal(std::initializer_list<std::shared_ptr<Shape>> shapes);
 	~Horizontal() = default;
-	std::string to_postscript() const;
+	std::string drawShift(double shift, int i) const;
+	int get_list_size() const;
+	std::string drawShape(int i) const;
+	int get_shift(int i) const;
 private:
 	std::vector<std::shared_ptr<Shape>> m_shapes;
 };
@@ -154,7 +184,6 @@ private:
 class Diamond : public Shape
 {
 public:
-	Diamond() = default;
 	Diamond(double side_length);
 	~Diamond() = default;
 	std::string to_postscript() const;
@@ -164,7 +193,6 @@ private:
 class STriangle : public Shape
 {
 public:
-	STriangle() = default;
 	STriangle(double side, int depth);
 	~STriangle() = default;
 	std::string to_postscript() const;
@@ -175,7 +203,6 @@ private:
 class U_Curve: public Shape
 {
 public:
-	U_Curve() = default;
 	U_Curve(double side):Shape(side, side){}
 	~U_Curve() = default;
 	std::string to_postscript() const;
@@ -186,7 +213,6 @@ private:
 class LPB : public Shape
 {
 public:
-	LPB() = default;
 	LPB(double side, int depth);
 	~LPB() = default;
 	std::string to_postscript() const;
